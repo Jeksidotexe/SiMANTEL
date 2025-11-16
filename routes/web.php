@@ -55,8 +55,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
         // --- REKAPITULASI LAPORAN ---
         Route::prefix('dashboard/rekapitulasi')->name('rekapitulasi.')->group(function () {
             // Arahkan kedua menu ke halaman filter yang sama
-            Route::get('/bulanan', [RekapitulasiController::class, 'index'])->name('bulanan');
-            Route::get('/puskomin', [RekapitulasiController::class, 'index'])->name('puskomin');
+            Route::get('/laporan', [RekapitulasiController::class, 'index'])->name('laporan');
 
             // Rute baru untuk memproses cetak PDF
             Route::get('/cetak', [RekapitulasiController::class, 'cetak'])->name('cetak');

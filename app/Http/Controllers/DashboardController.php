@@ -144,6 +144,8 @@ class DashboardController extends Controller
             $countPending = 0;
             $countApproved = 0;
 
+            $laporanDisetujuiPerBulan = [];
+
             if ($pimpinanWilayahId) {
                 foreach ($reportModels as $model) {
                     $baseQuery = $model::query()->whereHas('operator', function ($query) use ($pimpinanWilayahId) {
@@ -155,15 +157,42 @@ class DashboardController extends Controller
                     );
                     $countPending += (clone $baseQuery)->pendingVerification()->count();
                     $countApproved += (clone $baseQuery)->approved()->count();
+
+                    $dataPerModel = (clone $baseQuery)
+                        ->selectRaw('MONTH(tanggal_laporan) as bulan, COUNT(*) as jumlah')
+                        ->where('status_laporan', 'disetujui')
+                        ->whereYear('tanggal_laporan', now()->year)
+                        ->groupBy('bulan')
+                        ->pluck('jumlah', 'bulan');
+
+                    foreach ($dataPerModel as $bulan => $jumlah) {
+                        if (!isset($laporanDisetujuiPerBulan[$bulan])) {
+                            $laporanDisetujuiPerBulan[$bulan] = 0;
+                        }
+                        $laporanDisetujuiPerBulan[$bulan] += $jumlah;
+                    }
                 }
             }
 
             $laporanPending = $allLaporanPending->sortByDesc('created_at')->take(10);
 
+            $labelsBulan = [];
+            $dataJumlah = [];
+            for ($i = 1; $i <= 12; $i++) {
+                try {
+                    $labelsBulan[] = Carbon::create()->month($i)->locale('id')->isoFormat('MMMM');
+                } catch (\Exception $e) {
+                    $labelsBulan[] = Carbon::create()->month($i)->format('M');
+                }
+                $dataJumlah[] = $laporanDisetujuiPerBulan[$i] ?? 0;
+            }
+
             return view('dashboard.pimpinan.index', compact(
                 'laporanPending',
                 'countPending',
                 'countApproved',
+                'labelsBulan',
+                'dataJumlah'
             ));
         } else {
             abort(403, 'Role tidak dikenali.');

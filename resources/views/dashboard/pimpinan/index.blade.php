@@ -3,7 +3,6 @@
 @section('page', 'Home')
 
 @section('content')
-    {{-- Header --}}
     <div class="row mb-4">
         <div class="col-lg-12">
             <h3 class="font-weight-bolder text-uppercase mb-1">Pimpinan {{ Auth::user()->wilayah->nama_wilayah }}</h3>
@@ -12,7 +11,6 @@
     </div>
 
     <div class="row">
-        {{-- KOLOM KIRI: Tabel Laporan Terbaru (Lebih Lebar) --}}
         <div class="col-lg-8 mb-lg-0 mb-4">
             <div class="card shadow-sm h-100">
                 <div class="card-header pb-0 pt-3 bg-transparent">
@@ -116,9 +114,7 @@
             </div>
         </div>
 
-        {{-- KOLOM KANAN: Card Statistik (Vertikal) --}}
         <div class="col-lg-4">
-            {{-- Card 1: Menunggu Verifikasi --}}
             <div class="card card-body border-radius-lg shadow-sm mb-4">
                 <div class="row align-items-center">
                     <div class="col-8">
@@ -142,7 +138,6 @@
                 </a>
             </div>
 
-            {{-- Card 2: Laporan Disetujui --}}
             <div class="card card-body border-radius-lg shadow-sm">
                 <div class="row align-items-center">
                     <div class="col-8">
@@ -167,4 +162,137 @@
             </div>
         </div>
     </div>
+
+    <div class="row mt-4">
+        <div class="col-lg-12">
+            <div class="card shadow-sm">
+                <div class="card-header pb-0 pt-3 bg-transparent">
+                    <h6 class="mb-0 font-weight-bold d-flex align-items-center">
+                        <i class="material-symbols-rounded me-2 fs-5">bar_chart</i>
+                        Grafik Laporan Disetujui (Per Bulan {{ date('Y') }})
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <div class="chart">
+                        <canvas id="chart-laporan-pimpinan" class="chart-canvas" height="300"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
 @endsection
+
+@push('scripts')
+    <script>
+        document.addEventListener("DOMContentLoaded", function() {
+            @if (isset($labelsBulan) && isset($dataJumlah))
+                var ctx = document.getElementById("chart-laporan-pimpinan").getContext("2d");
+
+                const darkBlueColor = 'rgba(58, 65, 111, 0.8)';
+                const lightBlueColor = 'rgba(58, 65, 111, 1)';
+
+                var gradientFill = ctx.createLinearGradient(0, 0, 0, ctx.canvas.height);
+
+                gradientFill.addColorStop(0, darkBlueColor);
+                gradientFill.addColorStop(1, lightBlueColor);
+
+                var labels = @json($labelsBulan);
+                var data = @json($dataJumlah);
+
+                new Chart(ctx, {
+                    type: "bar",
+                    data: {
+                        labels: labels,
+                        datasets: [{
+                            label: "Laporan Disetujui",
+                            tension: 0.4,
+                            borderWidth: 0,
+                            borderRadius: 8,
+                            borderSkipped: false,
+                            backgroundColor: gradientFill,
+                            data: data,
+                            maxBarThickness: 40,
+                        }, ],
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: {
+                                display: false,
+                            },
+                            tooltip: {
+                                callbacks: {
+                                    label: function(context) {
+                                        let label = context.dataset.label || '';
+                                        if (label) {
+                                            label += ': ';
+                                        }
+                                        if (context.parsed.y !== null) {
+                                            label += context.parsed.y + ' Laporan';
+                                        }
+                                        return label;
+                                    }
+                                }
+                            }
+                        },
+                        interaction: {
+                            intersect: false,
+                            mode: 'index',
+                        },
+                        scales: {
+                            y: {
+                                grid: {
+                                    drawBorder: false,
+                                    display: true,
+                                    drawOnChartArea: true,
+                                    drawTicks: false,
+                                    borderDash: [5, 5],
+                                    color: 'rgba(0, 0, 0, .08)'
+                                },
+                                ticks: {
+                                    display: true,
+                                    padding: 10,
+                                    color: '#6c757d',
+                                    font: {
+                                        size: 14,
+                                        weight: 300,
+                                        family: "Inter",
+                                        style: 'normal',
+                                        lineHeight: 2
+                                    },
+                                    callback: function(value) {
+                                        if (value % 1 === 0) {
+                                            return value;
+                                        }
+                                    }
+                                }
+                            },
+                            x: {
+                                grid: {
+                                    drawBorder: false,
+                                    display: false,
+                                    drawOnChartArea: false,
+                                    drawTicks: false,
+                                },
+                                ticks: {
+                                    display: true,
+                                    color: '#6c757d',
+                                    padding: 20,
+                                    font: {
+                                        size: 14,
+                                        weight: 300,
+                                        family: "Inter",
+                                        style: 'normal',
+                                        lineHeight: 2
+                                    },
+                                }
+                            },
+                        },
+                    },
+                });
+            @endif
+        });
+    </script>
+@endpush

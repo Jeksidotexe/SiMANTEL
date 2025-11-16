@@ -2,9 +2,12 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\LaporanKejadianMenonjol;
+use App\Models\LaporanPelanggaranKampanye;
+use App\Models\LaporanPenguatanIdeologi;
 use App\Models\Wilayah;
 use App\Models\LaporanSituasiDaerah;
-use App\Models\LaporanPilkadaSerentak; // [TAMBAHKAN]
+use App\Models\LaporanPilkadaSerentak;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Carbon\Carbon;
@@ -15,9 +18,6 @@ use Yajra\DataTables\Facades\DataTables;
 
 class DaftarLaporanBulananController extends Controller
 {
-    /**
-     * [SCALABILITY] Tentukan semua model laporan yang relevan di sini.
-     */
     private $reportModels = [
         'laporan-situasi-daerah' => [
             'class' => LaporanSituasiDaerah::class,
@@ -29,13 +29,23 @@ class DaftarLaporanBulananController extends Controller
             'title' => 'Laporan Pilkada Serentak',
             'route_base' => 'laporan_pilkada_serentak',
         ],
-        // Tambahkan model lain di sini
+        'laporan-kejadian-menonjol' => [
+            'class' => LaporanKejadianMenonjol::class,
+            'title' => 'Laporan Kejadian Menonjol',
+            'route_base' => 'laporan_kejadian_menonjol',
+        ],
+        'laporan-pelanggaran-kampanye' => [
+            'class' => LaporanPelanggaranKampanye::class,
+            'title' => 'Laporan Pelanggaran Kampanye',
+            'route_base' => 'laporan_pelanggaran_kampanye',
+        ],
+        'laporan-penguatan-ideologi' => [
+            'class' => LaporanPenguatanIdeologi::class,
+            'title' => 'Laporan Penguatan Ideologi',
+            'route_base' => 'laporan_penguatan_ideologi',
+        ],
     ];
 
-    /**
-     * Menampilkan daftar wilayah untuk dipilih.
-     * (LOGIKA SKALABEL SUDAH DITERAPKAN DI SINI)
-     */
     public function index(Request $request)
     {
         if (Auth::user()->role !== 'admin') {
@@ -44,13 +54,12 @@ class DaftarLaporanBulananController extends Controller
 
         $selectedYear = $request->input('year', now()->year);
 
-        // [SCALABILITY] Ambil tahun unik dari SEMUA tabel laporan
         $yearQueries = [];
         foreach ($this->reportModels as $config) {
             $yearQueries[] = $config['class']::selectRaw('DISTINCT(YEAR(tanggal_laporan)) as year');
         }
         $query = array_shift($yearQueries);
-        if ($query) { // Pastikan query tidak null jika $reportModels kosong
+        if ($query) {
             foreach ($yearQueries as $q) {
                 $query->union($q);
             }
@@ -73,7 +82,6 @@ class DaftarLaporanBulananController extends Controller
             ->orderBy('nama_wilayah')
             ->get();
 
-        // [SCALABILITY] Hitung total laporan dari SEMUA model
         $wilayahs->each(function ($wilayah) use ($selectedYear, $daysInYear) {
             $totalCount = 0;
             foreach ($this->reportModels as $config) {
@@ -96,10 +104,6 @@ class DaftarLaporanBulananController extends Controller
         return view('dashboard.admin.daftar_laporan_bulanan.index', compact('wilayahs', 'availableYears', 'selectedYear'));
     }
 
-    /**
-     * Menampilkan daftar bulan untuk wilayah yang dipilih.
-     * (LOGIKA SKALABEL SUDAH DITERAPKAN DI SINI)
-     */
     public function showMonths(Request $request, Wilayah $wilayah)
     {
         if (Auth::user()->role !== 'admin') {
@@ -108,7 +112,6 @@ class DaftarLaporanBulananController extends Controller
 
         $year = $request->input('year', now()->year);
 
-        // [SCALABILITY] Ambil tanggal unik dari SEMUA tabel laporan
         $distinctReportDays = collect();
         foreach ($this->reportModels as $config) {
             $dates = $config['class']::where('status_laporan', 'disetujui')
@@ -130,17 +133,7 @@ class DaftarLaporanBulananController extends Controller
         for ($i = 1; $i <= 12; $i++) {
             $date = Carbon::create($year, $i, 1);
             $monthName = $date->locale('id')->isoFormat('MMMM');
-            $daysInMonth = $date->daysInMonth; // Target hari dalam bulan
-
-            // [PERBAIKAN] Hapus logika dinamis untuk target hari
-            // Cek jika tahun & bulan > tahun & bulan sekarang
-            /*
-            if ($date->gt(now()->endOfMonth())) {
-                $daysInMonth = 0; // Target menjadi 0 jika bulan belum tercapai
-            } elseif ($date->isSameMonth(now())) {
-                $daysInMonth = now()->day; // Target adalah hari ini jika bulan berjalan
-            }
-            */
+            $daysInMonth = $date->daysInMonth;
 
             $reportCountForMonth = $distinctReportDays->filter(function ($reportDate) use ($i) {
                 return $reportDate->month == $i;
@@ -162,9 +155,6 @@ class DaftarLaporanBulananController extends Controller
         return view('dashboard.admin.daftar_laporan_bulanan.months', compact('wilayah', 'year', 'monthsData'));
     }
 
-    /**
-     * Menampilkan halaman tabel laporan untuk wilayah dan bulan tertentu.
-     */
     public function showReports(Request $request, Wilayah $wilayah, $month)
     {
         if (Auth::user()->role !== 'admin') {
@@ -177,15 +167,11 @@ class DaftarLaporanBulananController extends Controller
         $year = $request->input('year', now()->year);
         $monthName = Carbon::create($year, (int)$month)->locale('id')->isoFormat('MMMM');
 
-        // [TAMBAHKAN] Kirim daftar tipe laporan ke view untuk filter
         $reportTypes = $this->reportModels;
 
         return view('dashboard.admin.daftar_laporan_bulanan.reports', compact('wilayah', 'month', 'year', 'monthName', 'reportTypes'));
     }
 
-    /**
-     * Menyiapkan data laporan untuk DataTables.
-     */
     public function data(Request $request, Wilayah $wilayah, $month)
     {
         if (Auth::user()->role !== 'admin') {
@@ -197,19 +183,14 @@ class DaftarLaporanBulananController extends Controller
 
         $year = $request->input('year', now()->year);
 
-        // [TAMBAHKAN] Ambil filter tipe laporan dari request
         $filterReportType = $request->input('report_type');
 
-        // [SCALABILITY] Gabungkan SEMUA laporan menggunakan UNION
         $allQueries = collect();
 
-        // Tentukan model yang akan di-query berdasarkan filter
         $modelsToQuery = [];
         if (!empty($filterReportType) && isset($this->reportModels[$filterReportType])) {
-            // Jika memfilter spesifik, hanya ambil model itu
             $modelsToQuery[$filterReportType] = $this->reportModels[$filterReportType];
         } else {
-            // Jika tidak ada filter (atau 'all'), ambil semua model
             $modelsToQuery = $this->reportModels;
         }
 
@@ -225,7 +206,6 @@ class DaftarLaporanBulananController extends Controller
                 ->whereHas('operator.wilayah', function ($query) use ($wilayah) {
                     $query->where('id_wilayah', $wilayah->id_wilayah);
                 })
-                // [PERBAIKAN] Pilih semua kolom narasi karena user bilang sama
                 ->select(
                     'id_laporan',
                     'tanggal_laporan',
@@ -237,7 +217,7 @@ class DaftarLaporanBulananController extends Controller
                     'narasi_e',
                     'narasi_f',
                     'narasi_g',
-                    'narasi_h', // <-- Kolom narasi dikembalikan
+                    'narasi_h',
                     DB::raw("'$tipeLaporan' as tipe_laporan"),
                     DB::raw("'$routeBase' as route_base")
                 );
@@ -245,28 +225,24 @@ class DaftarLaporanBulananController extends Controller
             $allQueries->push($query);
         }
 
-        // Jika tidak ada model yang dipilih (misal filter salah), return data kosong
         if ($allQueries->isEmpty()) {
             return DataTables::of(collect())->make(true);
         }
 
-        $laporans = $allQueries->shift(); // Ambil query pertama
-        if ($laporans) { // Pastikan $laporans tidak null
+        $laporans = $allQueries->shift();
+        if ($laporans) {
             foreach ($allQueries as $q) {
-                $laporans->unionAll($q); // Gabungkan sisanya
+                $laporans->unionAll($q);
             }
-            $laporans->latest('tanggal_laporan'); // Urutkan setelah union
+            $laporans->latest('tanggal_laporan');
         } else {
-            // Jika $allQueries awalnya kosong, $laporans akan null
             $laporans = collect();
         }
-        // [AKHIR PERBAIKAN]
 
         return DataTables::of($laporans)
             ->editColumn('tanggal_laporan', function ($row) {
                 return Carbon::parse($row->tanggal_laporan)->isoFormat('D MMMM YYYY');
             })
-            // [PERBAIKAN] Kembalikan kolom narasi
             ->addColumn('pemerintahan_daerah', function ($row) {
                 return Str::limit(strip_tags($row->narasi_a), 100);
             })
@@ -291,9 +267,7 @@ class DaftarLaporanBulananController extends Controller
             ->addColumn('hankam', function ($row) {
                 return Str::limit(strip_tags($row->narasi_h), 100);
             })
-            // Kolom 'judul' dan 'tipe_laporan' tidak perlu ditampilkan, tapi ada di data
             ->addColumn('aksi', function ($row) {
-                // [PERBAIKAN] Gunakan $paramName yang benar
                 $paramName = str_replace('-', '_', $row->route_base);
                 $showUrl = route($row->route_base . '.show', [
                     $paramName => $row->id_laporan,
@@ -304,7 +278,6 @@ class DaftarLaporanBulananController extends Controller
                        <i class="fa fa-eye"></i> Detail
                    </a>';
             })
-            // [PERBAIKAN] Sesuaikan blok 'only'
             ->only([
                 'tanggal_laporan',
                 'pemerintahan_daerah',

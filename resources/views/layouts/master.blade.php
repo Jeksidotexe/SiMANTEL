@@ -4,9 +4,9 @@
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-    <link rel="apple-touch-icon" sizes="76x76" href="{{ asset('master') }}/assets/img/apple-icon.png">
-    <link rel="icon" type="image/png" href="{{ asset('master') }}/assets/img/favicon.png">
-    <title> @yield('title') | SiMANTEL</title>
+    <link rel="apple-touch-icon" sizes="76x76" href="{{ asset('images/Logo.png') }}">
+    <link rel="icon" type="image/png" href="{{ asset('images/Logo.png') }}">
+    <title> @yield('title') | SiTARA</title>
     <meta name="csrf-token" content="{{ csrf_token() }}">
     @auth
         <meta name="user-id" content="{{ Auth::id() }}">

@@ -1,6 +1,4 @@
 @extends('layouts.master')
-
-{{-- Judul Halaman --}}
 @section('page', 'Riwayat Verifikasi')
 @section('title', 'Riwayat Verifikasi')
 
@@ -16,18 +14,17 @@
     <div class="row mb-4">
         <div class="col-12 mb-md-0 mb-4">
             <div class="card">
-                {{-- Tombol Buat Laporan Baru dihapus --}}
                 <div class="card-body p-3">
                     <div class="table-responsive p-0">
                         <table class="table table-striped" id="table-laporan-history">
                             <thead>
-                                <th width="5%">No</th>
+                                <th>No</th>
                                 <th>Tipe Laporan</th>
                                 <th>Nama Operator</th>
                                 <th>Tanggal Laporan</th>
                                 <th>Tanggal Verifikasi</th>
                                 <th>Status</th>
-                                <th width="15%"><i class="fa fa-cog"></i></th>
+                                <th><i class="fa fa-cog"></i></th>
                             </thead>
                         </table>
                     </div>
@@ -38,21 +35,16 @@
 @endsection
 
 @push('scripts')
-    {{-- SweetAlert tidak diperlukan jika tidak ada aksi hapus/edit --}}
-    {{-- <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script> --}}
-
     <script>
         let table;
 
         $(function() {
-            // Inisialisasi DataTables
             table = $('#table-laporan-history').DataTable({
                 responsive: true,
                 processing: true,
                 serverSide: true,
-                ajax: '{{ route('verifikasi.history.data') }}', // <-- PERUBAHAN DI SINI
+                ajax: '{{ route('verifikasi.history.data') }}',
                 columns: [
-                    // Kolom disesuaikan dengan VerificationController@historyData
                     {
                         data: 'DT_RowIndex',
                         searchable: false,
@@ -78,7 +70,7 @@
                         data: 'status_laporan',
                         name: 'status_laporan',
                         searchable: false,
-                        sortable: false // Status biasanya tidak di-sort
+                        sortable: false
                     },
                     {
                         data: 'action',
@@ -97,7 +89,5 @@
                 }
             });
         });
-
-        // Fungsi deleteData dihapus karena tidak ada tombol hapus di sini
     </script>
 @endpush

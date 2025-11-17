@@ -242,13 +242,11 @@ class VerificationController extends Controller
      */
     public function pendingData()
     {
-        // [PERBAIKAN] Ambil ID Wilayah Pimpinan
         $pimpinanWilayahId = Auth::user()->id_wilayah;
         $queries = [];
         if ($pimpinanWilayahId) {
             foreach ($this->verifiableModels as $key => $config) {
                 $queries[] = $config['class']::with('operator')
-                    // [PERBAIKAN] Filter berdasarkan wilayah operator
                     ->whereHas('operator', function ($query) use ($pimpinanWilayahId) {
                         $query->where('id_wilayah', $pimpinanWilayahId);
                     })
@@ -258,8 +256,7 @@ class VerificationController extends Controller
                         'judul',
                         'id_operator',
                         'tanggal_laporan',
-                        'created_at',
-                        \Illuminate\Support\Facades\DB::raw("'$key' as report_type_key") // Tambahkan tipe laporan
+                        \Illuminate\Support\Facades\DB::raw("'$key' as report_type_key")
                     ]);
             }
         }
@@ -284,9 +281,6 @@ class VerificationController extends Controller
             })
             ->editColumn('tanggal_laporan', function ($row) {
                 return \Carbon\Carbon::parse($row->tanggal_laporan)->isoFormat('D MMMM YYYY');
-            })
-            ->editColumn('created_at', function ($row) {
-                return \Carbon\Carbon::parse($row->created_at)->isoFormat('D MMMM YY, HH:mm');
             })
             ->addColumn('action', function ($row) use ($verifiableModelsMap) {
                 $config = $verifiableModelsMap[$row->report_type_key] ?? null;
@@ -368,11 +362,16 @@ class VerificationController extends Controller
                 return \Carbon\Carbon::parse($row->tanggal_laporan)->isoFormat('D MMMM YYYY');
             })
             ->editColumn('verified_at', function ($row) {
-                // Gunakan format yang menyertakan jam, karena verifikasi perlu jam
-                return \Carbon\Carbon::parse($row->verified_at)->isoFormat('D MMMM YYYY, HH:mm');
+                return \Carbon\Carbon::parse($row->verified_at)->isoFormat('D MMMM YYYY');
             })
-            ->editColumn('created_at', function ($row) {
-                return \Carbon\Carbon::parse($row->created_at)->isoFormat('D MMMM YY, HH:mm');
+            ->editColumn('status_laporan', function ($laporan) {
+                if ($laporan->status_laporan == 'disetujui') {
+                    return '<span class="badge badge-sm bg-gradient-success"><i class="fas fa-circle-check"></i> Disetujui</span>';
+                } elseif ($laporan->status_laporan == 'revisi') {
+                    return '<span class="badge badge-sm bg-gradient-warning"><i class="fas fa-exclamation-triangle"></i> Revisi</span>';
+                } else {
+                    return '<span class="badge badge-sm bg-gradient-info"><i class="fas fa-hourglass-half"></i> Menunggu Verifikasi</span>';
+                }
             })
             ->addColumn('action', function ($row) use ($verifiableModelsMap) {
                 $config = $verifiableModelsMap[$row->report_type_key] ?? null;
@@ -381,7 +380,7 @@ class VerificationController extends Controller
                 $showUrl = route($config['route_base'] . '.show', [$paramName => $row->id_laporan, 'from' => 'history']);
                 return '<a href="' . $showUrl . '" class="btn btn-sm btn-dark-blue bg-gradient-dark-blue"><i class="fa fa-search me-1"></i> Lihat</a>';
             })
-            ->rawColumns(['operator_name', 'action'])
+            ->rawColumns(['operator_name', 'status_laporan', 'action'])
             ->toJson();
     }
 }

@@ -3,11 +3,11 @@
 
 <head>
     <meta charset="utf-8" />
+    <meta http-equiv="Content-Security-Policy" content="upgrade-insecure-requests">
     <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-    <link rel="apple-touch-icon" sizes="76x76" href="{{ asset('master') }}/assets/img/apple-icon.png">
-    <link rel="icon" type="image/png" href="{{ asset('master') }}/assets/img/favicon.png">
+    <link rel="apple-touch-icon" sizes="76x76" href="{{ asset('images/Logo.png') }}">
     <title>
-        @yield('title') | SiMANTEL
+        @yield('title') | SiTARA
     </title>
     <!--     Fonts and icons     -->
     <link rel="stylesheet" type="text/css"
@@ -20,6 +20,7 @@
     <!-- Material Icons -->
     <link rel="stylesheet"
         href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@24,400,0,0" />
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <!-- CSS Files -->
     <link id="pagestyle" href="{{ asset('master') }}/assets/css/material-dashboard.css?v=3.2.0" rel="stylesheet" />
 </head>
@@ -88,12 +89,12 @@
     <script src="{{ asset('master') }}/assets/js/plugins/smooth-scrollbar.min.js"></script>
     <script>
         var win = navigator.platform.indexOf('Win') > -1;
-    if (win && document.querySelector('#sidenav-scrollbar')) {
-      var options = {
-        damping: '0.5'
-      }
-      Scrollbar.init(document.querySelector('#sidenav-scrollbar'), options);
-    }
+        if (win && document.querySelector('#sidenav-scrollbar')) {
+            var options = {
+                damping: '0.5'
+            }
+            Scrollbar.init(document.querySelector('#sidenav-scrollbar'), options);
+        }
     </script>
     <!-- Github buttons -->
     <script async defer src="https://buttons.github.io/buttons.js"></script>
@@ -101,14 +102,14 @@
     <script src="{{ asset('master') }}/assets/js/material-dashboard.min.js?v=3.2.0"></script>
 
     <script>
-        document.addEventListener('DOMContentLoaded', function () {
+        document.addEventListener('DOMContentLoaded', function() {
             const togglePassword = document.getElementById('togglePassword');
             const password = document.getElementById('password');
             const icon = togglePassword.querySelector('span.material-symbols-rounded');
 
             // Pastikan elemen-elemen ini ada di halaman
             if (togglePassword && password && icon) {
-                togglePassword.addEventListener('click', function (e) {
+                togglePassword.addEventListener('click', function(e) {
                     // Toggle tipe input dari password ke text atau sebaliknya
                     const type = password.getAttribute('type') === 'password' ? 'text' : 'password';
                     password.setAttribute('type', type);
